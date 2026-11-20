@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal Penerbangan Indonesia</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom Scrollbar for Day Selector */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-sky-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header & Hero Section -->
+    <header class="bg-gradient-to-r from-blue-700 via-blue-600 to-sky-500 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
+                        <i class="fa-solid fa-plane-departure text-3xl text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Nusantara Flight Tracker</h1>
+                        <p class="text-blue-100 text-sm sm:text-base">Jadwal Penerbangan Real-Time Indonesia (7 Hari)</p>
+                    </div>
+                </div>
+                <div class="flex items-center bg-white/10 backdrop-blur-md rounded-xl p-2 px-4 border border-white/20">
+                    <i class="fa-regular fa-clock mr-2 text-sky-200"></i>
+                    <span id="liveClock" class="font-semibold text-sm sm:text-base">WIB --:--:--</span>
+                </div>
+            </div>
+
+            <!-- Global Search Input -->
+            <div class="mt-6 relative max-w-2xl mx-auto">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass text-blue-400"></i>
+                </div>
+                <input type="text" id="searchInput" 
+                    placeholder="Cari kode penerbangan, kota asal, tujuan, atau maskapai..." 
+                    class="w-full pl-11 pr-4 py-3.5 rounded-2xl text-slate-800 bg-white shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 text-sm sm:text-base transition-all">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+        
+        <!-- Tab Navigasi Hari (Senin - Minggu) -->
+        <section class="mb-6">
+            <h2 class="text-sm font-semibold text-blue-900 uppercase tracking-wider mb-3">Pilih Hari Penerbangan</h2>
+            <div class="flex space-x-2 overflow-x-auto pb-2 no-scrollbar" id="dayTabsContainer">
+                <!-- Days standard JS injection -->
+            </div>
+        </section>
+
+        <!-- Filter Bar -->
+        <section class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-sky-100 mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Bandara Asal -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5"><i class="fa-solid fa-plane-departure text-blue-500 mr-1"></i> Bandara Asal</label>
+                    <select id="originFilter" class="w-full bg-sky-50/50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Semua Bandara Asal</option>
+                        <option value="CGK">Jakarta (CGK)</option>
+                        <option value="SUB">Surabaya (SUB)</option>
+                        <option value="DPS">Bali (DPS)</option>
+                        <option value="KNO">Medan (KNO)</option>
+                        <option value="UPG">Makassar (UPG)</option>
+                        <option value="YIA">Yogyakarta (YIA)</option>
+                    </select>
+                </div>
+
+                <!-- Bandara Tujuan -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5"><i class="fa-solid fa-plane-arrival text-blue-500 mr-1"></i> Bandara Tujuan</label>
+                    <select id="destinationFilter" class="w-full bg-sky-50/50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Semua Bandara Tujuan</option>
+                        <option value="CGK">Jakarta (CGK)</option>
+                        <option value="SUB">Surabaya (SUB)</option>
+                        <option value="DPS">Bali (DPS)</option>
+                        <option value="KNO">Medan (KNO)</option>
+                        <option value="UPG">Makassar (UPG)</option>
+                        <option value="YIA">Yogyakarta (YIA)</option>
+                    </select>
+                </div>
+
+                <!-- Filter Maskapai -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5"><i class="fa-solid fa-plane text-blue-500 mr-1"></i> Maskapai</label>
+                    <select id="airlineFilter" class="w-full bg-sky-50/50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Semua Maskapai</option>
+                        <option value="Garuda Indonesia">Garuda Indonesia</option>
+                        <option value="Batik Air">Batik Air</option>
+                        <option value="Citilink">Citilink</option>
+                        <option value="Lion Air">Lion Air</option>
+                        <option value="AirAsia">AirAsia</option>
+                        <option value="Super Air Jet">Super Air Jet</option>
+                    </select>
+                </div>
+
+                <!-- Filter Status -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5"><i class="fa-solid fa-circle-info text-blue-500 mr-1"></i> Status</label>
+                    <select id="statusFilter" class="w-full bg-sky-50/50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Semua Status</option>
+                        <option value="On Time">On Time</option>
+                        <option value="Boarding">Boarding</option>
+                        <option value="Delayed">Delayed</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
+                <span id="flightCount">Menampilkan 0 penerbangan</span>
+                <button id="resetFiltersBtn" class="text-blue-600 hover:text-blue-800 font-semibold flex items-center transition">
+                    <i class="fa-solid fa-rotate-right mr-1"></i> Reset Filter
+                </button>
+            </div>
+        </section>
+
+        <!-- Dynamic Flight Display List / Table -->
+        <!-- Desktop Table View (lg screens) -->
+        <div class="hidden lg:block bg-white rounded-2xl shadow-sm border border-sky-100 overflow-hidden mb-6">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-blue-600 text-white text-xs font-semibold uppercase tracking-wider">
+                        <th class="py-3.5 px-4">Penerbangan</th>
+                        <th class="py-3.5 px-4">Maskapai</th>
+                        <th class="py-3.5 px-4">Keberangkatan</th>
+                        <th class="py-3.5 px-4">Kedatangan</th>
+                        <th class="py-3.5 px-4 text-center">Durasi</th>
+                        <th class="py-3.5 px-4">Harga</th>
+                        <th class="py-3.5 px-4 text-center">Status</th>
+                        <th class="py-3.5 px-4 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="desktopTableBody" class="divide-y divide-slate-100 text-sm font-medium">
+                    <!-- Dynamic JS Injection -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile & Tablet Card View (< lg screens) -->
+        <div id="mobileCardsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:hidden mb-6">
+            <!-- Dynamic JS Injection -->
+        </div>
+
+        <!-- Empty State Message -->
+        <div id="emptyState" class="hidden bg-white rounded-2xl p-8 text-center border border-slate-200 my-6 shadow-sm">
+            <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fa-solid fa-plane-slash text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800">Tidak ada penerbangan ditemukan</h3>
+            <p class="text-slate-500 text-sm mt-1">Coba sesuaikan kata kunci atau kriteria filter Anda.</p>
+        </div>
+    </main>
+
+    <!-- Footer Section -->
+    <footer class="bg-slate-900 text-slate-400 py-8 border-t border-slate-800 text-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center sm:flex sm:justify-between sm:items-center">
+            <div class="flex items-center justify-center sm:justify-start space-x-2 text-white font-bold text-base mb-4 sm:mb-0">
+                <i class="fa-solid fa-plane-up text-blue-400"></i>
+                <span>Nusantara Flight Schedule</span>
+            </div>
+            <p>© 2026 Informasional Jadwal Penerbangan Indonesia. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Flight Detail Modal -->
+    <div id="flightModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-all border border-blue-100">
+            <div class="bg-gradient-to-r from-blue-700 to-blue-600 p-5 text-white flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <span id="modalAirlineIcon" class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-lg">✈️</span>
+                    <div>
+                        <h3 id="modalFlightNumber" class="text-lg font-bold">GA-102</h3>
+                        <p id="modalAirline" class="text-xs text-blue-100">Garuda Indonesia</p>
+                    </div>
+                </div>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-5">
+                <!-- Rute Flight Detail -->
+                <div class="flex justify-between items-center bg-sky-50 p-4 rounded-2xl">
+                    <div class="text-left">
+                        <span id="modalOriginCode" class="text-2xl font-black text-blue-900">CGK</span>
+                        <p id="modalOriginCity" class="text-xs text-slate-500 font-medium">Jakarta</p>
+                        <p id="modalDepTime" class="text-sm font-semibold text-slate-700 mt-1">07:00 WIB</p>
+                    </div>
+
+                    <div class="flex flex-col items-center px-4">
+                        <span id="modalDuration" class="text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full mb-1">1j 30m</span>
+                        <div class="flex items-center space-x-1 text-blue-400">
+                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                            <div class="w-12 sm:w-20 border-t-2 border-dashed border-blue-300"></div>
+                            <i class="fa-solid fa-plane text-blue-600 text-xs"></i>
+                        </div>
+                        <span id="modalDay" class="text-[10px] text-slate-400 mt-1">Senin</span>
+                    </div>
+
+                    <div class="text-right">
+                        <span id="modalDestCode" class="text-2xl font-black text-blue-900">SUB</span>
+                        <p id="modalDestCity" class="text-xs text-slate-500 font-medium">Surabaya</p>
+                        <p id="modalArrTime" class="text-sm font-semibold text-slate-700 mt-1">08:30 WIB</p>
+                    </div>
+                </div>
+
+                <!-- Additional Details -->
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div class="border border-slate-100 p-3 rounded-xl bg-slate-50/50">
+                        <span class="text-slate-400 block mb-0.5">Status Penerbangan</span>
+                        <span id="modalStatus" class="font-bold">On Time</span>
+                    </div>
+                    <div class="border border-slate-100 p-3 rounded-xl bg-slate-50/50">
+                        <span class="text-slate-400 block mb-0.5">Tipe Pesawat</span>
+                        <span id="modalAircraft" class="font-bold text-slate-700">Boeing 737-800</span>
+                    </div>
+                    <div class="border border-slate-100 p-3 rounded-xl bg-slate-50/50">
+                        <span class="text-slate-400 block mb-0.5">Terminal</span>
+                        <span id="modalTerminal" class="font-bold text-slate-700">Terminal 3 Domestik</span>
+                    </div>
+                    <div class="border border-slate-100 p-3 rounded-xl bg-slate-50/50">
+                        <span class="text-slate-400 block mb-0.5">Harga Tiket</span>
+                        <span id="modalPrice" class="font-bold text-blue-600">Rp 1.250.000</span>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="pt-2">
+                    <button id="bookTicketBtn" onclick="simulatedBooking()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-blue-500/30 transition duration-200">
+                        Pesan Tiket Sekarang
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Confirmation Toast/Alert -->
+    <div id="bookingToast" class="fixed bottom-5 right-5 bg-emerald-600 text-white px-5 py-4 rounded-2xl shadow-xl hidden flex items-center space-x-3 z-50">
+        <i class="fa-solid fa-circle-check text-2xl"></i>
+        <div>
+            <h4 class="font-bold text-sm">Pemesanan Berhasil Disimulasikan!</h4>
+            <p class="text-xs text-emerald-100">Detail telah dikirim ke sistem tiket dummy.</p>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Data Bandara Indonesia
+        const AIRPORTS = {
+            "CGK": { city: "Jakarta", name: "Soekarno-Hatta (CGK)" },
+            "SUB": { city: "Surabaya", name: "Juanda (SUB)" },
+            "DPS": { city: "Bali", name: "I Gusti Ngurah Rai (DPS)" },
+            "KNO": { city: "Medan", name: "Kualanamu (KNO)" },
+            "UPG": { city: "Makassar", name: "Sultan Hasanuddin (UPG)" },
+            "YIA": { city: "Yogyakarta", name: "Yogyakarta Intl (YIA)" }
+        };
+
+        const DAYS = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
+        
+        let selectedDay = "Senin";
+        let activeModalFlight = null;
+
+        // Data Master Penerbangan Dummy Selama 7 Hari
+        const rawFlightTemplates = [
+            { code: "GA-102", airline: "Garuda Indonesia", origin: "CGK", dest: "SUB", dep: "06:00", arr: "07:30", duration: "1j 30m", price: 1350000, status: "On Time", aircraft: "Boeing 737-800", terminal: "Terminal 3" },
+            { code: "JT-690", airline: "Lion Air", origin: "CGK", dest: "DPS", dep: "07:15", arr: "10:05", duration: "1j 50m", price: 890000, status: "Boarding", aircraft: "Boeing 737-900ER", terminal: "Terminal 2E" },
+            { code: "QZ-752", airline: "AirAsia", origin: "SUB", dest: "DPS", dep: "08:30", arr: "09:25", duration: "0j 55m", price: 540000, status: "On Time", aircraft: "Airbus A320", terminal: "Terminal 1" },
+            { code: "ID-651", airline: "Batik Air", origin: "CGK", dest: "KNO", dep: "09:00", arr: "11:15", duration: "2j 15m", price: 1200000, status: "Delayed", aircraft: "Airbus A320", terminal: "Terminal 2D" },
+            { code: "QG-340", airline: "Citilink", origin: "YIA", dest: "CGK", dep: "10:20", arr: "11:30", duration: "1j 10m", price: 720000, status: "On Time", aircraft: "Airbus A320 NEO", terminal: "Terminal 3" },
+            { code: "IU-812", airline: "Super Air Jet", origin: "CGK", dest: "UPG", dep: "11:45", arr: "15:05", duration: "2j 20m", price: 980000, status: "On Time", aircraft: "Airbus A320", terminal: "Terminal 1A" },
+            { code: "GA-408", airline: "Garuda Indonesia", origin: "CGK", dest: "DPS", dep: "13:00", arr: "15:50", duration: "1j 50m", price: 1650000, status: "On Time", aircraft: "Boeing 777-300ER", terminal: "Terminal 3" },
+            { code: "JT-532", airline: "Lion Air", origin: "SUB", dest: "UPG", dep: "14:10", arr: "16:40", duration: "1j 30m", price: 760000, status: "Delayed", aircraft: "Boeing 737-800", terminal: "Terminal 1" },
+            { code: "ID-688", airline: "Batik Air", origin: "KNO", dest: "CGK", dep: "15:30", arr: "17:45", duration: "2j 15m", price: 1150000, status: "Boarding", aircraft: "Boeing 737-800", terminal: "Terminal A" },
+            { code: "QG-780", airline: "Citilink", origin: "DPS", dest: "SUB", dep: "17:00", arr: "17:00", duration: "1j 00m", price: 610000, status: "On Time", aircraft: "Airbus A320", terminal: "Domestik" },
+            { code: "IU-551", airline: "Super Air Jet", origin: "DPS", dest: "YIA", dep: "18:20", arr: "18:40", duration: "1j 20m", price: 810000, status: "On Time", aircraft: "Airbus A320", terminal: "Domestik" },
+            { code: "GA-610", airline: "Garuda Indonesia", origin: "UPG", dest: "CGK", dep: "19:30", arr: "20:55", duration: "2j 25m", price: 1540000, status: "On Time", aircraft: "Airbus A330-300", terminal: "Terminal 1" }
+        ];
+
+        // Generate full 7-day schedule with minor variations
+        let flightsData = [];
+        
+        function generateWeeklyData() {
+            DAYS.forEach((day, dayIndex) => {
+                rawFlightTemplates.forEach((item, index) => {
+                    // Create status variations based on day to make it dynamic
+                    let status = item.status;
+                    if ((index + dayIndex) % 5 === 0) status = "Delayed";
+                    else if ((index + dayIndex) % 3 === 0) status = "Boarding";
+                    else status = "On Time";
+
+                    flightsData.push({
+                        ...item,
+                        id: `${day}-${item.code}-${index}`,
+                        day: day,
+                        status: status
+                    });
+                });
+            });
+        }
+
+        // Initialize UI Elements & Event Listeners
+        document.addEventListener("DOMContentLoaded", () => {
+            generateWeeklyData();
+            setupDayTabs();
+            renderFlights();
+            updateClock();
+            setInterval(updateClock, 1000);
+
+            // Filter Event Listeners
+            document.getElementById('searchInput').addEventListener('input', renderFlights);
+            document.getElementById('originFilter').addEventListener('change', renderFlights);
+            document.getElementById('destinationFilter').addEventListener('change', renderFlights);
+            document.getElementById('airlineFilter').addEventListener('change', renderFlights);
+            document.getElementById('statusFilter').addEventListener('change', renderFlights);
+            document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
+        });
+
+        // Live Clock Component
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('liveClock').textContent = `WIB ${timeString}`;
+        }
+
+        // Setup 7-Day Tabs Navigation
+        function setupDayTabs() {
+            const container = document.getElementById('dayTabsContainer');
+            container.innerHTML = '';
+
+            DAYS.forEach(day => {
+                const isActive = day === selectedDay;
+                const button = document.createElement('button');
+                button.className = `px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
+                    isActive 
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
+                    : 'bg-white text-slate-600 hover:bg-sky-100 hover:text-blue-600 border border-slate-200/80'
+                }`;
+                button.innerHTML = `<i class="fa-regular fa-calendar-days mr-2 text-xs"></i>${day}`;
+                button.onclick = () => {
+                    selectedDay = day;
+                    setupDayTabs();
+                    renderFlights();
+                };
+                container.appendChild(button);
+            });
+        }
+
+        // Filter and Search Engine
+        function getFilteredFlights() {
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const originVal = document.getElementById('originFilter').value;
+            const destVal = document.getElementById('destinationFilter').value;
+            const airlineVal = document.getElementById('airlineFilter').value;
+            const statusVal = document.getElementById('statusFilter').value;
+
+            return flightsData.filter(flight => {
+                const matchesDay = flight.day === selectedDay;
+                const matchesSearch = 
+                    flight.code.toLowerCase().includes(searchVal) ||
+                    flight.airline.toLowerCase().includes(searchVal) ||
+                    AIRPORTS[flight.origin].city.toLowerCase().includes(searchVal) ||
+                    AIRPORTS[flight.dest].city.toLowerCase().includes(searchVal);
+                
+                const matchesOrigin = originVal === "" || flight.origin === originVal;
+                const matchesDest = destVal === "" || flight.dest === destVal;
+                const matchesAirline = airlineVal === "" || flight.airline === airlineVal;
+                const matchesStatus = statusVal === "" || flight.status === statusVal;
+
+                return matchesDay && matchesSearch && matchesOrigin && matchesDest && matchesAirline && matchesStatus;
+            });
+        }
+
+        // Render Flight Cards & Table Data
+        function renderFlights() {
+            const filtered = getFilteredFlights();
+            const desktopBody = document.getElementById('desktopTableBody');
+            const mobileContainer = document.getElementById('mobileCardsContainer');
+            const emptyState = document.getElementById('emptyState');
+            const countLabel = document.getElementById('flightCount');
+
+            countLabel.textContent = `Menampilkan ${filtered.length} penerbangan (${selectedDay})`;
+
+            if (filtered.length === 0) {
+                desktopBody.innerHTML = '';
+                mobileContainer.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            // 1. Render Desktop Table Rows
+            desktopBody.innerHTML = filtered.map(flight => `
+                <tr onclick="openModal('${flight.id}')" class="hover:bg-blue-50/50 transition cursor-pointer">
+                    <td class="py-4 px-4 font-bold text-blue-900">${flight.code}</td>
+                    <td class="py-4 px-4">
+                        <div class="flex items-center space-x-2">
+                            ${getAirlineLogo(flight.airline)}
+                            <span class="text-slate-700 font-medium">${flight.airline}</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-4">
+                        <div class="font-bold text-slate-800">${flight.dep} <span class="text-xs font-normal text-slate-500">WIB</span></div>
+                        <div class="text-xs text-slate-500">${AIRPORTS[flight.origin].city} (${flight.origin})</div>
+                    </td>
+                    <td class="py-4 px-4">
+                        <div class="font-bold text-slate-800">${flight.arr} <span class="text-xs font-normal text-slate-500">WIB</span></div>
+                        <div class="text-xs text-slate-500">${AIRPORTS[flight.dest].city} (${flight.dest})</div>
+                    </td>
+                    <td class="py-4 px-4 text-center text-xs font-semibold text-slate-500">${flight.duration}</td>
+                    <td class="py-4 px-4 font-bold text-blue-600">Rp ${flight.price.toLocaleString('id-ID')}</td>
+                    <td class="py-4 px-4 text-center">${getStatusBadge(flight.status)}</td>
+                    <td class="py-4 px-4 text-center">
+                        <button class="bg-sky-100 hover:bg-blue-600 hover:text-white text-blue-700 font-semibold px-3 py-1.5 rounded-lg text-xs transition">
+                            Detail
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // 2. Render Mobile Cards
+            mobileContainer.innerHTML = filtered.map(flight => `
+                <div onclick="openModal('${flight.id}')" class="bg-white p-5 rounded-2xl shadow-sm border border-sky-100 active:scale-[0.99] transition cursor-pointer">
+                    <div class="flex justify-between items-center mb-3 pb-3 border-b border-slate-100">
+                        <div class="flex items-center space-x-2">
+                            ${getAirlineLogo(flight.airline)}
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm">${flight.airline}</h3>
+                                <span class="text-xs font-semibold text-blue-600">${flight.code}</span>
+                            </div>
+                        </div>
+                        ${getStatusBadge(flight.status)}
+                    </div>
+
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <span class="text-2xl font-black text-slate-800">${flight.dep}</span>
+                            <p class="text-xs font-bold text-blue-900">${flight.origin}</p>
+                            <p class="text-[11px] text-slate-400">${AIRPORTS[flight.origin].city}</p>
+                        </div>
+
+                        <div class="flex flex-col items-center px-2">
+                            <span class="text-[10px] text-slate-400 font-semibold mb-0.5">${flight.duration}</span>
+                            <div class="flex items-center space-x-1 text-blue-400">
+                                <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                                <div class="w-12 border-t border-dashed border-blue-300"></div>
+                                <i class="fa-solid fa-plane text-blue-500 text-xs"></i>
+                            </div>
+                        </div>
+
+                        <div class="text-right">
+                            <span class="text-2xl font-black text-slate-800">${flight.arr}</span>
+                            <p class="text-xs font-bold text-blue-900">${flight.dest}</p>
+                            <p class="text-[11px] text-slate-400">${AIRPORTS[flight.dest].city}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-100 text-xs">
+                        <div>
+                            <span class="text-slate-400">Harga Tiket</span>
+                            <p class="font-bold text-blue-600 text-sm">Rp ${flight.price.toLocaleString('id-ID')}</p>
+                        </div>
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-md shadow-blue-500/20">
+                            Detail / Pesan
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Helper: Status Badges
+        function getStatusBadge(status) {
+            switch(status) {
+                case 'On Time':
+                    return `<span class="bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1 rounded-full text-xs inline-flex items-center"><i class="fa-solid fa-circle-check mr-1.5 text-[10px]"></i>On Time</span>`;
+                case 'Boarding':
+                    return `<span class="bg-blue-100 text-blue-700 font-bold px-2.5 py-1 rounded-full text-xs inline-flex items-center"><i class="fa-solid fa-door-open mr-1.5 text-[10px]"></i>Boarding</span>`;
+                case 'Delayed':
+                    return `<span class="bg-amber-100 text-amber-700 font-bold px-2.5 py-1 rounded-full text-xs inline-flex items-center"><i class="fa-solid fa-clock-warning mr-1.5 text-[10px]"></i>Delayed</span>`;
+                default:
+                    return `<span class="bg-slate-100 text-slate-600 font-bold px-2.5 py-1 rounded-full text-xs">${status}</span>`;
+            }
+        }
+
+        // Helper: Airline Logos / Icons
+        function getAirlineLogo(airline) {
+            const icons = {
+                'Garuda Indonesia': '<div class="w-7 h-7 rounded-lg bg-teal-500 text-white flex items-center justify-center font-bold text-xs">GA</div>',
+                'Lion Air': '<div class="w-7 h-7 rounded-lg bg-red-500 text-white flex items-center justify-center font-bold text-xs">JT</div>',
+                'Batik Air': '<div class="w-7 h-7 rounded-lg bg-purple-700 text-white flex items-center justify-center font-bold text-xs">ID</div>',
+                'Citilink': '<div class="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-bold text-xs">QG</div>',
+                'AirAsia': '<div class="w-7 h-7 rounded-lg bg-red-600 text-white flex items-center justify-center font-bold text-xs">QZ</div>',
+                'Super Air Jet': '<div class="w-7 h-7 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold text-xs">IU</div>'
+            };
+            return icons[airline] || '<div class="w-7 h-7 rounded-lg bg-blue-500 text-white flex items-center justify-center text-xs"><i class="fa-solid fa-plane"></i></div>';
+        }
+
+        // Reset Filter Function
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('originFilter').value = '';
+            document.getElementById('destinationFilter').value = '';
+            document.getElementById('airlineFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            renderFlights();
+        }
+
+        // Modal Handlers
+        function openModal(flightId) {
+            const flight = flightsData.find(f => f.id === flightId);
+            if (!flight) return;
+
+            activeModalFlight = flight;
+
+            document.getElementById('modalFlightNumber').textContent = flight.code;
+            document.getElementById('modalAirline').textContent = flight.airline;
+            document.getElementById('modalOriginCode').textContent = flight.origin;
+            document.getElementById('modalOriginCity').textContent = AIRPORTS[flight.origin].city;
+            document.getElementById('modalDepTime').textContent = `${flight.dep} WIB`;
+            
+            document.getElementById('modalDestCode').textContent = flight.dest;
+            document.getElementById('modalDestCity').textContent = AIRPORTS[flight.dest].city;
+            document.getElementById('modalArrTime').textContent = `${flight.arr} WIB`;
+
+            document.getElementById('modalDuration').textContent = flight.duration;
+            document.getElementById('modalDay').textContent = flight.day;
+            document.getElementById('modalAircraft').textContent = flight.aircraft;
+            document.getElementById('modalTerminal').textContent = flight.terminal;
+            document.getElementById('modalPrice').textContent = `Rp ${flight.price.toLocaleString('id-ID')}`;
+
+            document.getElementById('modalStatus').innerHTML = getStatusBadge(flight.status);
+
+            const modal = document.getElementById('flightModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('flightModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            activeModalFlight = null;
+        }
+
+        // Simulated Booking Action
+        function simulatedBooking() {
+            if (!activeModalFlight) return;
+            
+            closeModal();
+            const toast = document.getElementById('bookingToast');
+            toast.classList.remove('hidden');
+            toast.classList.add('flex');
+
+            setTimeout(() => {
+                toast.classList.add('hidden');
+                toast.classList.remove('flex');
+            }, 3500);
+        }
+
+        // Close modal when clicking outside of modal box
+        window.onclick = function(event) {
+            const modal = document.getElementById('flightModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        };
+    </script>
+</body>
+</html>
